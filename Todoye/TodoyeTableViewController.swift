@@ -11,7 +11,7 @@ import UIKit
 class TodoyeTableViewController: UITableViewController {
     
     
-    let itemArray = ["Find Mike", "Buy Eggos", "Destory Demogorgon"]
+    var itemArray = ["Find Mike", "Buy Eggos", "Destory Demogorgon"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -58,6 +58,38 @@ class TodoyeTableViewController: UITableViewController {
     }
     
 
+    @IBAction func addNewItem(_ sender: UIBarButtonItem) {
+        
+        var textField = UITextField()
+        
+        // при нажате на + Добавим новые данные в таблицу! Используем Алерт Контроллер
+        
+        let controller = UIAlertController(title: "Добавим в таблицу", message: "Напишите задание", preferredStyle: .alert)
+        
+        // 2 По нажатию кнопку запускается это замыкание
+        let action = UIAlertAction(title: "Добавить", style: .default) { (action) in
+            
+            self.itemArray.append(textField.text!)
+            self.tableView.reloadData()
+            
 
+        }
+        
+        // 1 Создается поле в контроллере
+        controller.addTextField { (controllerTextField) in
+            controllerTextField.placeholder = "Пишите сюда"
+            
+            // присваиваем локальной переменной ссылк на объект
+            textField = controllerTextField
+            
+        }
+        
+       
+        
+        controller.addAction(action)
+        
+        present(controller,animated: true,completion: nil)
+    }
+    
 }
 
