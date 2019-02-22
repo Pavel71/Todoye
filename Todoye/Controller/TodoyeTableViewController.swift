@@ -10,8 +10,11 @@ import UIKit
 
 class TodoyeTableViewController: UITableViewController {
     
+
+
+    var itemArray = ["Find Mike", "Buy Eggos", "Destory Demogorgon","a","b","d","f","g","h","j","q","w","e","r","a","s","9"]
     
-    var itemArray = ["Find Mike", "Buy Eggos", "Destory Demogorgon"]
+    var markerValueSet = Set <String>()
     
     // Plist который сохраняет данные в корне телефона по id приложения
     let defaults = UserDefaults.standard
@@ -19,13 +22,15 @@ class TodoyeTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        markerValueSet = Model().set
+        
         // Пусть наш рабочий массив берет самые свежиы данные из Plist core
         
-        if let item  = defaults.array(forKey: "TodoListArray") as? [String] {
-            
-            itemArray = item
-            
-        }
+//        if let item  = defaults.array(forKey: "TodoListArray") as? [String] {
+//
+//            itemArray = item
+//
+//        }
         
         // так как TableViewController  Delegate Datasorce не надо прописывать
         
@@ -45,7 +50,13 @@ class TodoyeTableViewController: UITableViewController {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "myCell", for: indexPath)
         
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let text = itemArray[indexPath.row]
+        cell.textLabel?.text = text
+        
+        // Сделал так чтобы отображалиьс ячейки с выбранными элементами через добавление этих элементов в Set! Но это будет работать только в случае если каждый элемент уникален
+        cell.accessoryType = !markerValueSet.contains(text) ? .none : .checkmark
+        
+
         
         return cell
     }
@@ -55,13 +66,29 @@ class TodoyeTableViewController: UITableViewController {
     // Срабатывает когда мы выбираем строку
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        print(itemArray[indexPath.row])
-        
         // Поставить марку что выбрали
         
-        let markEnum = tableView.cellForRow(at: indexPath)?.accessoryType
+//        let markEnum = tableView.cellForRow(at: indexPath)?.accessoryType
+        let labelCellText = tableView.cellForRow(at: indexPath)?.textLabel?.text
+
+ 
+        if markerValueSet.contains(labelCellText!) {
+
+            markerValueSet.remove(labelCellText!)
+
+        } else {
+
+            markerValueSet.insert(labelCellText!)
+
+        }
         
-        tableView.cellForRow(at: indexPath)?.accessoryType = markEnum == .checkmark ? .none : .checkmark
+        // Не нужно проставлять марки так как этот метод запросит обновить перезапуск cellForRowAt
+        tableView.reloadData()
+        
+        
+        // это помечает маркеором
+//        tableView.cellForRow(at: indexPath)?.accessoryType = markEnum == .checkmark ? .none : .checkmark
+        
 
         
         // Снять выбор со строчки
