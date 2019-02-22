@@ -12,9 +12,20 @@ class TodoyeTableViewController: UITableViewController {
     
     
     var itemArray = ["Find Mike", "Buy Eggos", "Destory Demogorgon"]
+    
+    // Plist который сохраняет данные в корне телефона по id приложения
+    let defaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Пусть наш рабочий массив берет самые свежиы данные из Plist core
+        
+        if let item  = defaults.array(forKey: "TodoListArray") as? [String] {
+            
+            itemArray = item
+            
+        }
         
         // так как TableViewController  Delegate Datasorce не надо прописывать
         
@@ -70,6 +81,9 @@ class TodoyeTableViewController: UITableViewController {
         let action = UIAlertAction(title: "Добавить", style: .default) { (action) in
             
             self.itemArray.append(textField.text!)
+            
+            // Сохраним данные в Plist приложения
+            self.defaults.set(self.itemArray, forKey: "TodoListArray")
             self.tableView.reloadData()
             
 
