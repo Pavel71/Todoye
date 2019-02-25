@@ -8,13 +8,15 @@
 
 import UIKit
 
-class Model: NSObject {
+
+// Этот протокол нужен если мы хотим кодировать класс в Plist
+class Item: Encodable, Decodable {
     
     var value: String = ""
     var done: Bool = false
     
-    var dictionary: Dictionary <String, Bool>  = [:]
-    
-    var set: Set <String> = []
 
 }
+
+
+

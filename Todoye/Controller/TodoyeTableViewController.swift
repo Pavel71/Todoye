@@ -11,50 +11,98 @@ import UIKit
 class TodoyeTableViewController: UITableViewController {
     
 
-
-    var itemArray = ["Find Mike", "Buy Eggos", "Destory Demogorgon","a","b","d","f","g","h","j","q","w","e","r","a","s","9"]
+    var itemArray = ["Find Mike", "Buy Eggos", "Destory"]
     
-    var markerValueSet = Set <String>()
+    // Здесь я попробую сделать через класс
+    
+    var itemExemplArray = [Item]()
+    
+    // ["Find Mike", "Buy Eggos", "Destory Demogorgon","a","b","d","f","g","h","j","q","w","e","r","a","s","9"]
+    
+
     
     // Plist который сохраняет данные в корне телефона по id приложения
     let defaults = UserDefaults.standard
+    
+    
+    // Создаем свой Plist c данными
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        markerValueSet = Model().set
         
-        // Пусть наш рабочий массив берет самые свежиы данные из Plist core
+        loadItems()
         
-//        if let item  = defaults.array(forKey: "TodoListArray") as? [String] {
-//
-//            itemArray = item
-//
-//        }
+        // Загрузка данных из собственного Plist
+        
+        
+        
+        
+        
+
+        
+
         
         // так как TableViewController  Delegate Datasorce не надо прописывать
         
     }
     
+    // Загрузим данные из своего Plist
+    func loadItems() {
+        
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            
+            let decoder = PropertyListDecoder()
+            do {
+                
+                itemExemplArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                
+                print(error)
+            }
+            
+ 
+        }
+
+
+    }
+    
+    func loadDataUserDeafaults () {
+        
+        
+            if let item  = defaults.array(forKey: "TodoListArray") as? [String] {
+    
+                itemArray = item
+    
+            }
+    }
+    
+  
     
     //MARK: - TableViewDataSource Methods
     
     // Сколько строчек в секторе
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        return itemArray.count
+        
+        
+        return itemExemplArray.count
     }
     
     // Какой тип ячейки отобразить
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "myCell", for: indexPath)
+
+        let text = itemExemplArray[indexPath.row].value
         
-        let text = itemArray[indexPath.row]
         cell.textLabel?.text = text
         
         // Сделал так чтобы отображалиьс ячейки с выбранными элементами через добавление этих элементов в Set! Но это будет работать только в случае если каждый элемент уникален
-        cell.accessoryType = !markerValueSet.contains(text) ? .none : .checkmark
+
+        
+        cell.accessoryType = itemExemplArray[indexPath.row].done ? .checkmark : .none
         
 
         
@@ -66,29 +114,16 @@ class TodoyeTableViewController: UITableViewController {
     // Срабатывает когда мы выбираем строку
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        // Поставить марку что выбрали
+        // Поставить марку что выбрали переключаем флаг
+        itemExemplArray[indexPath.row].done = !itemExemplArray[indexPath.row].done
         
-//        let markEnum = tableView.cellForRow(at: indexPath)?.accessoryType
-        let labelCellText = tableView.cellForRow(at: indexPath)?.textLabel?.text
-
- 
-        if markerValueSet.contains(labelCellText!) {
-
-            markerValueSet.remove(labelCellText!)
-
-        } else {
-
-            markerValueSet.insert(labelCellText!)
-
-        }
+        // Не забываем сохранить эти изменения в Plist
+        
+        saveItem()
+        
         
         // Не нужно проставлять марки так как этот метод запросит обновить перезапуск cellForRowAt
         tableView.reloadData()
-        
-        
-        // это помечает маркеором
-//        tableView.cellForRow(at: indexPath)?.accessoryType = markEnum == .checkmark ? .none : .checkmark
-        
 
         
         // Снять выбор со строчки
@@ -107,10 +142,17 @@ class TodoyeTableViewController: UITableViewController {
         // 2 По нажатию кнопку запускается это замыкание
         let action = UIAlertAction(title: "Добавить", style: .default) { (action) in
             
-            self.itemArray.append(textField.text!)
+            let item = Item()
+            item.value = textField.text!
             
-            // Сохраним данные в Plist приложения
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+                
+            self.itemExemplArray.append(item)
+            
+            //Сохраним данные в свой Plist
+            
+            self.saveItem()
+            
+            
             self.tableView.reloadData()
             
 
@@ -130,6 +172,28 @@ class TodoyeTableViewController: UITableViewController {
         controller.addAction(action)
         
         present(controller,animated: true,completion: nil)
+    }
+    
+    
+    //MARK: - EncodeData
+    
+    func saveItem() {
+        // Функция принимает данные и добавляет их в свой plist
+        
+        let encoder = PropertyListEncoder()
+        
+        do {
+            // преобразовали данные
+            let dataEncode = try encoder.encode(self.itemExemplArray)
+            // Записали по указанному адресу
+            try dataEncode.write(to: dataFilePath!)
+        } catch {
+            
+            print(error)
+        }
+        
+        
+        
     }
     
 }
