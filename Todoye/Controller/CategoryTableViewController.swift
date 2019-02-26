@@ -27,7 +27,7 @@ class CategoryTableViewController: UITableViewController {
     
     // Массив данных из БД
     var itemCategoryArray: [Category] = []
-    var categoryItems: String!
+
     
     // Context Нашей БД
     
@@ -37,20 +37,11 @@ class CategoryTableViewController: UITableViewController {
         super.viewDidLoad()
 
         loadCategory()
-        
-        // Поменяем название щаголовка на категорию
- 
-        
-        
-
-    
 
     }
 
 
-    
-    
-    // MARK: - Table view data source
+    // MARK: - Table view DATASOURCE
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemCategoryArray.count
@@ -68,15 +59,10 @@ class CategoryTableViewController: UITableViewController {
         return cell
     }
     
-    
+    // MARK: - Table view DELEGATE
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // При нажатия на строку мы переходим ко всем продуктам этой категории
-        
-        // Нужно передать параметр category в следующий ViewController
-        
-        categoryItems = itemCategoryArray[indexPath.row].name
-   
-        
+
         // Осуществляю переход
         performSegue(withIdentifier: "goToTodoye", sender: self)
     }
@@ -87,11 +73,18 @@ class CategoryTableViewController: UITableViewController {
         if segue.identifier == "goToTodoye" {
             
             let itemVC = segue.destination as! TodoyeTableViewController
-            itemVC.categoryItemsString = categoryItems
+            
+            if let indexPath = tableView.indexPathForSelectedRow {
+                
+                itemVC.selectedCategory = self.itemCategoryArray[indexPath.row]
+            }
+
         }
 
 
     }
+    
+    //MARK: - ADD Button
     
     // При добавлении категории Создаем класси сохраняем изменени в БД
     @IBAction func addButton(_ sender: UIBarButtonItem) {
@@ -125,6 +118,8 @@ class CategoryTableViewController: UITableViewController {
      
     }
     
+    
+    //MARK: SAVE and LOAD
     // Сохраняем категории в БД
     
     func saveCategory() {

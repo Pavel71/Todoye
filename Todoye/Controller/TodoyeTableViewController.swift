@@ -16,42 +16,39 @@ class TodoyeTableViewController: UITableViewController {
     
     @IBOutlet var addItemButton: UIBarButtonItem!
     
-    // Хочу записать сюда запрос из Категориального viewControllera чтобы при переходе загружать сюда теп продукты которые относятся к этой категории
-    var request: NSFetchRequest<Item>!
+    
+    
     var categoryItemsString: String!
+    
+    
+    // MARK: - CategoryObject
+    var selectedCategory: Category? {
+        
+        didSet {
+            
+            categoryItemsString = selectedCategory!.name
+            
+            loadItems()
+
+            self.navigationItem.title = categoryItemsString
+        }
+        
+    }
     
     // Здесь я попробую сделать через класс
     
     var itemExemplArray = [Item]()
 
-    // Plist который сохраняет данные в корне телефона по id приложения
-    // сохранить и достать данные легко set .array
-//    let defaults = UserDefaults.standard
     
-    
-    // Создаем свой Plist c данными
-//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
-    
-    
-    
-    
-    
-    // Создадим контекст для Core Data тот самый который в AppDelegate
+
     
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.navigationItem.title = categoryItemsString
-        
-        
-        // Если пользоватся навигатором то он хочет зарегистирровать ячейки
-//        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "myCell")
-        
-        loadItems()
 
     }
+    
  
     //MARK: - TableViewDataSource Methods
     
@@ -118,10 +115,10 @@ class TodoyeTableViewController: UITableViewController {
 //            let item = Item()
             let item = Item(context: self.context)
             
-            // Просто как обойтись с всеми товарами если мы захотим создать товар там! Можно просто убрать кнопочку Добавления!
-            item.namecategory = self.categoryItemsString
+
             item.value = nameTextField.text!
             item.done = false
+            item.parentCategory = self.selectedCategory
             
                 
             self.itemExemplArray.append(item)
@@ -139,14 +136,7 @@ class TodoyeTableViewController: UITableViewController {
             // присваиваем локальной переменной ссылк на объект
             nameTextField = controllerTextField
         }
-        
-        // 2 название категории
-//        controller.addTextField { (controllerTextField) in
-//            controllerTextField.placeholder = "Название категории"
-//
-//            // присваиваем локальной переменной ссылк на объект
-//            categorytextField = controllerTextField
-//        }
+
   
         controller.addAction(action)
         
@@ -173,28 +163,47 @@ class TodoyeTableViewController: UITableViewController {
         
     }
     
+//    func loadCategoryItems() {
+//
+//        let request: NSFetchRequest<Item> = Item.fetchRequest()
+//
+//        if categoryItemsString != "Все продукты" {
+//
+//            request.predicate = NSPredicate(format: "parentCategory.name MATCHES %@", categoryItemsString)
+//
+//            request.sortDescriptors = [NSSortDescriptor(key: "value", ascending: true)]
+//
+//        } else {
+//            // Не даем добавлять товары в режиме все товары
+//            addItemButton.isEnabled = false
+//        }
+//
+//        loadItems(with: request)
+//    }
+    
     
 // with request: NSFetchRequest<Item> = Item.fetchRequest()
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
-    
-        // Вообщем в Core Data что то наподобие SQl запросов! Ведь база SQl
-        // останется только изучить как получать конктретные данные из таблицы п оконткретным параметрам и все будет норм! но это уже интереснее! Ближе к моему проекту
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(),with predicate : NSPredicate? = nil) {
         
-        // Если в метод приходит катгория то нужно осуществить поиски и загрузку всех ее Items
+        var finalPredict = predicate
         
         if categoryItemsString != "Все продукты" {
             
-            //Скроем в этом случае кнопку добавления товара и разрешим добавлять товар только в своей категории чтобы не было ошибок при выборе категории
+            let categoryPredicat = NSPredicate(format: "parentCategory.name MATCHES %@", categoryItemsString)
             
-            // Получи все строки с этим условием
-            request.predicate = NSPredicate(format: "namecategory CONTAINS[cd] %@", categoryItemsString)
+            finalPredict = categoryPredicat
             
-            // Отсортируй этот результат
-            request.sortDescriptors = [NSSortDescriptor(key: "value", ascending: true)]
-        } else {
+            if let pred = predicate {
+                
+                let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicat,pred])
+                
+                finalPredict = compoundPredicate
+            }
             
-            addItemButton.isEnabled = false
+            
         }
+        // если здесь будет nil то будет обычный поиск всех возможных
+        request.predicate = finalPredict
         
         do {
        
@@ -217,14 +226,17 @@ extension TodoyeTableViewController : UISearchBarDelegate {
         
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         
-        
-        // Положи в реквест все что нашел по предикут
-        request.predicate = NSPredicate(format: "value CONTAINS[cd] %@", searchBar.text!)
+        // если написанна хоть 1 буква
+        if searchBar.text!.count > 0 {
+            
+            let predicate = NSPredicate(format: "value CONTAINS[cd] %@", searchBar.text!)
+            
+            request.sortDescriptors = [NSSortDescriptor(key: "value", ascending: true)]
+            
+            loadItems(with: request, with: predicate)
+        }
 
-        // Отсортируй этот результат
-        request.sortDescriptors = [NSSortDescriptor(key: "value", ascending: true)]
         
-        loadItems(with: request)
     }
         
 
@@ -234,8 +246,7 @@ extension TodoyeTableViewController : UISearchBarDelegate {
         if searchBar.text?.count == 0 {
             
             loadItems()
-            
-            
+
             DispatchQueue.main.async {
                 
                 // Убрать клавиатуру
@@ -254,7 +265,13 @@ extension TodoyeTableViewController : UISearchBarDelegate {
     
     
 
+// Plist который сохраняет данные в корне телефона по id приложения
+// сохранить и достать данные легко set .array
+//    let defaults = UserDefaults.standard
 
+
+// Создаем свой Plist c данными
+//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
 
 
 // сохранение и загрузка в Plist ///////////
